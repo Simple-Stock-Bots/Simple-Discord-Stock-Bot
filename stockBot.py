@@ -29,19 +29,19 @@ async def on_message(message):
     channel = message.channel
     tickers = re.findall('[$](\w{1,4})', content)
     print(tickers)
-    for ticker in tickers:
-        print(ticker)
-        url = 'https://data.bravos.co/v1/quote?symbols=' + ticker + \
-            '&apikey=' + BRAVOS_API + '&format=json'
-        print(url)
-
-        with urllib.request.urlopen(url) as url:
-            data = json.loads(url.read().decode())
-            nameTicker = data[ticker.upper()]['name']
-            print(nameTicker)
-            priceTicker = data[ticker.upper()]['price']
-            print(str(priceTicker))
-            await client.send_message(channel, 'The current stock price of ' + nameTicker + ' is $' + str(priceTicker))
+    url = 'https://data.bravos.co/v1/quote?symbols=' + ",".join(tickers) + \
+        '&apikey=' + BRAVOS_API + '&format=json'
+    print(url)
+    with urllib.request.urlopen(url) as url:
+        data = json.loads(url.read().decode())
+        for ticker in tickers:
+            try:
+                nameTicker = data[ticker.upper()]['name']
+                priceTicker = data[ticker.upper()]['price']
+                await client.send_message(channel, 'The current stock price of ' + nameTicker + ' is $' + str(priceTicker))
+            except KeyError:
+                await client.send_message(channel, ticker.upper() + ' does not exist.')
+                pass
 
 
 async def list_servers():
