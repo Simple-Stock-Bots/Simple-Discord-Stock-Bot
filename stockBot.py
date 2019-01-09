@@ -6,14 +6,15 @@ import re
 import urllib.request
 import credentials
 
-BOT_PREFIX = ("?", "!")
+# Make sure to update credentials.py with your secrets
 TOKEN = credentials.secrets['TOKEN']
 BRAVOS_API = credentials.secrets['BRAVOS_API']
+BOT_PREFIX = ("?", "!")
 
 client = commands.Bot(command_prefix=BOT_PREFIX)
 
 
-@client.event
+@client.event  # Make bot say when its ready
 async def on_ready():
     print('Bot is Ready!!!')
 
@@ -21,21 +22,26 @@ async def on_ready():
 @client.event
 async def on_message(message):
 
-    if message.author == client.user:
+    if message.author == client.user:  # Prevent bot from reacting to its own messages
         return
 
+    # define information about the message
     author = message.author
     content = message.content
     channel = message.channel
+
+    # regex to find tickers in messages
     tickers = re.findall('[$](\w{1,4})', content)
-    print(tickers)
+
+    # get ticker information from bravos api
     url = 'https://data.bravos.co/v1/quote?symbols=' + ",".join(tickers) + \
         '&apikey=' + BRAVOS_API + '&format=json'
-    print(url)
+
+    # load json data from url as an object
     with urllib.request.urlopen(url) as url:
         data = json.loads(url.read().decode())
-        for ticker in tickers:
-            try:
+        for ticker in tickers:  # iterate through the tickers and print relevant info one message at a time
+            try:  # checks if data is a valid ticker, if it is not tells the user
                 nameTicker = data[ticker.upper()]['name']
                 priceTicker = data[ticker.upper()]['price']
                 await client.send_message(channel, 'The current stock price of ' + nameTicker + ' is $' + str(priceTicker))
