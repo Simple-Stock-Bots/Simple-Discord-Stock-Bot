@@ -32,33 +32,41 @@ async def on_message(message):
     channel = message.channel
 
     try:
-        # regex to find tickers in messages
+        # regex to find tickers in messages, looks for up to 4 word characters following a dollar sign and captures the 4 word characters
         tickers = re.findall('[$](\w{1,4})', content)
 
-        # get ticker information from bravos api
+        # get ticker information from bravos api, turns tickers into comma separated list so that only one api call is needed per message
         url = 'https://data.bravos.co/v1/quote?symbols=' + ",".join(tickers) + \
             '&apikey=' + BRAVOS_API + '&format=json'
 
         # load json data from url as an object
         with urllib.request.urlopen(url) as url:
             data = json.loads(url.read().decode())
+
             for ticker in tickers:  # iterate through the tickers and print relevant info one message at a time
                 try:  # checks if data is a valid ticker, if it is not tells the user
+
+                    # Get Stock ticker name from Data Object
                     nameTicker = data[ticker.upper()]['name']
+                    # Get Stock Ticker price from Object
                     priceTicker = data[ticker.upper()]['price']
 
+                    # Checks if !news is called, and prints news embed if it is
                     if content.startswith('!news'):
+
                         embed = displayembed(ticker, nameTicker, priceTicker)
                         await client.send_message(channel, embed=embed)
-                    else:
+                    else:  # If news embed isnt called, print normal stock price
                         await client.send_message(channel, 'The current stock price of ' + nameTicker + ' is $**' + str(priceTicker) + '**')
-                except KeyError:
+
+                except KeyError:  # If searching for the ticker in loaded data fails, then Bravos didnt provide it, so tell the user.
                     await client.send_message(channel, ticker.upper() + ' does not exist.')
                     pass
     except:
         pass
 
 
+# Prints an embed full of news about listed stock
 def displayembed(ticker, nameTicker, priceTicker):
 
     embed = discord.Embed(
