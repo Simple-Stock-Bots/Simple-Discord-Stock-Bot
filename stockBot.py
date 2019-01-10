@@ -66,11 +66,16 @@ def displayembed(ticker, nameTicker, priceTicker):
         nameTicker + ' is $**' + str(priceTicker) + '**',
         color=0x50bdfe
     )
-
+    '''
+    Get ticker logo from Motley Fool, then get then print the following sources:
+    Bravos, Seeking Alpha, MSN Money, Yahoo Finance, Wall Street Journal, The Street.
+    '''
     embed.set_thumbnail(
         url='https://g.foolcdn.com/art/companylogos/mark/' + ticker + '.png')
+    embed.add_field(name='Bravos',
+                    value='https://bravos.co/' + ticker, inline=False)
     embed.add_field(name='Seeking Alpha',
-                    value='https://seekingalpha.com/symbol/' + ticker, inline=True)
+                    value='https://seekingalpha.com/symbol/' + ticker, inline=False)
     embed.add_field(
         name='MSN Money', value='https://www.msn.com/en-us/money/stockdetails?symbol=' + ticker, inline=False)
     embed.add_field(name='Yahoo Finance',
