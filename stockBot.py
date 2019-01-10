@@ -28,7 +28,7 @@ async def on_message(message):
 
     # define information about the message
     author = message.author
-    content = message.content
+    content = message.content.lower()
     channel = message.channel
 
     try:
@@ -46,7 +46,8 @@ async def on_message(message):
                 try:  # checks if data is a valid ticker, if it is not tells the user
                     nameTicker = data[ticker.upper()]['name']
                     priceTicker = data[ticker.upper()]['price']
-                    if message.content.startswith('!news'):
+
+                    if content.startswith('!news'):
                         embed = displayembed(ticker, nameTicker, priceTicker)
                         await client.send_message(channel, embed=embed)
                     else:
