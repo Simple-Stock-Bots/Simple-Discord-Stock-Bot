@@ -5,7 +5,6 @@ import discord
 import re
 import urllib.request
 import credentials
-from datetime import datetime
 
 # Make sure to update credentials.py with your secrets
 TOKEN = credentials.secrets['TOKEN']
