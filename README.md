@@ -1,55 +1,116 @@
-# Simple Discord Stock Bot
+<p align="center">
+  <a href="" rel="noopener">
+ <img width=200px height=200px src="https://assets.gitlab-static.net/uploads/-/system/project/avatar/10273693/logo.jpg" alt="Simple Discord Stock Bot"></a>
+</p>
 
-Super simple Discord Bot wrote in Python for displaying the price of a stock, or news about a stock quickly and easily.
+<h3 align="center">Simple Discord Stock Bot</h3>
 
-## Motivation
+<div align="center">
 
-[Google Allo](https://blog.google/products/messages/latest-messages-allo-duo-and-hangouts/) is disappearing in March 2019 so me and my friends who use it for talking about stocks need a replacement. Allo has a feature that allows you to talk to the Google Assitant right in the chat which makes pulling up a news article or a stock quote in chat extremely easy. This bot aims to replace that specific functionality.
+  [![Status](https://img.shields.io/badge/status-active-success.svg)]()
+  [![Platform](https://img.shields.io/badge/platform-Discord-blue.svg)](https://discordapp.com/)
+  [![License](https://img.shields.io/badge/license-MIT-blue.svg)](/LICENSE)
 
-## Features
+</div>
 
-The bot checks every message for tickers which can be called by putting a dollar sign in front of the stock symbol like this: ```$tsla``` The bot is pretty smart and can handle as many tickers in a message as you put in.
+---
 
-For example the message:
+<p align="center"> Discord Bot 🤖 that provides Stock Market information.
+    <br> 
+</p>
 
-```I want to know about $tsla $djia $f $aaxn $baba $amzn```
+## 📝 Table of Contents
++ [About](#about)
++ [How it works](#working)
++ [Usage](#usage)
++ [Getting Started](#getting_started)
++ [Deploying your own bot](#deployment)
++ [Built Using](#built_using)
++ [Contributing](../CONTRIBUTING.md)
++ [author](#author)
++ [Acknowledgments](#acknowledgement)
 
-Will output:
+## 🧐 About <a name = "about"></a>
+This bot aims to be as simple as possible while providing all the information you need on the stock market. The motivation of this bot is to provide similar stock market functionality that the Google Assistant provided in [Google Allo](https://gcemetery.co/google-allo/) before the project was sunset.
 
-![Discord-Bot-Stock-Price-Example](https://blog.ansonbiggs.com/content/images/2019/01/Discord-Bot-Stock-Price-Example.png)
+## 💭 How it works <a name = "working"></a>
 
- The bot can also quickly give you news links about any tickers you need. Simply putting ```!news``` in front of your message like this:
+This bot works by using the [IEX API 2.0](https://iexcloud.io/docs/api/). Using various endpoints provided by the API, the bot can take either take commands from users or check any messages for stock symbols as detailed in [Usage](#usage).
 
- ```!news $tsla```
+## 🎈 Usage <a name = "usage"></a>
 
- Will output:
+### Basic Usage
 
-![Discord-Bot-Stock-News-Example](https://blog.ansonbiggs.com/content/images/2019/01/Discord-Bot-Stock-News-Example.png)
+The simplest way to use the bot is just by sending a message either as a direct message or in a group chat with the bot active. The bot will search every message for text with a dollar sign followed by a stock symbol, and it will return the full name of the company and the current trading price.
+```
+$tsla
+```
+The symbols can be anywhere in the message, and you can post as many as you like so commands such as:
+```
+I wonder if $aapl is down as much as $msft is today.
+```
+would return the stock price of both Apple and Microsoft like so:
+```
+The current stock price of Microsoft Corp. is $131.4, the stock is currently up 2.8%
 
- The news feature also works with as many tickers as you want to put in a message at once for example: ```!news I want to know about $tsla $amzn```
+The current stock price of Apple, Inc. is $190.15, the stock is currently up 2.66%
+```
 
-## How it works
+### /dividend
 
-The most important part of the project is [discord.py](https://github.com/Rapptz/discord.py) which is an API wrapper for Discord written in Python. discord.py made this project a breeze.
+To get information about the dividend of a stock type `/dividend` followed by any text that has symbols with a dollar sign in front of them. So, the following command:
+```
+/dividend $psec
+```
+Would return information about Prospect Capitals dividend:
+```
+Prospect Capital Corp. Declares June 2019 Dividend of $0.06 Per Share 
+The dividend is in: 38 Days 3 Hours 53 Minutes 22 Seconds.
+```
 
-The other important part is the [Bravos API](https://bravos.co/a/data) which is used to get the current quote for the provided ticker. The API works perfectly and is free with an account.
+## 🏁 Getting Started <a name = "getting_started"></a>
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See [deployment](#deployment) for notes on how to deploy the project on a live system.
 
-The news sources are currently hardcoded, and the code simply puts the stock ticker into a URL where its needed to get a page on that specific ticker. The image of the company that is shown in the embeds are taken from Motley Fool without an official API. There's probably a better way to get the images but I couldn't find one easily.
+### Prerequisites
 
-## Installation
+This project runs neatly in a docker container, so all that you need to run it yourself is [Docker](https://hub.docker.com/?overlay=onboarding) installed on your system.
 
-- Follow install instructions for [discord.py](https://github.com/Rapptz/discord.py#installing) without full voice support.
-- Follow directions in credentials.py
-  - Get Discord Token [Here](https://discordapp.com/developers/applications/) > BOTNAME > Bot > 'copy token'
-  - Get Bravos API key [Here](https://bravos.co/a/data) after you make a free account
-- Run stockBot.py
+You will also need a Discord API key which can be obtained [here.](https://discordapp.com/developers/)
 
-## Contribute
+Finally, you will need and IEX Cloud API key. They offer a free tier that should be enough for any private groups, more details [here.](https://iexcloud.io/)
 
-This project probably won't get additional development since I decided to use Telegram instead of Discord for group messaging, but if you would like add anything feel free to make your own clone repo, or you can contact me and maybe get a pull request going. Would also love to hear about all the things I did wrong in my code<3
+### Installing
 
-## License
+Once Docker is installed and you have your API keys for Discord and IEX Cloud getting the bot running on any platform is extremely easy. 
 
-In laymen (not a substitute for the actual license) you can do whatever you want with this project as long as you also share it, and [give me credit](https://blog.ansonbiggs.com).
+Download or clone the repository to your machine and open a terminal in the project and build the Docker container.
 
-<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">Simple Discord Stock Bot</span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://blog.ansonbiggs.com" property="cc:attributionName" rel="cc:attributionURL">Anson Biggs</a> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br />Based on a work at <a xmlns:dct="http://purl.org/dc/terms/" href="https://gitlab.com/MisterBiggs/simple-discord-stock-bot" rel="dct:source">https://gitlab.com/MisterBiggs/simple-discord-stock-bot</a>.
+```
+docker build -t simple-discord-bot .
+```
+
+Then run the bot using your API keys.
+
+```
+docker run --detach \
+     -e discord=DISCORD_TOKEN \
+     -e IEX=IEX_TOKEN \
+      simple-discord-bot
+```
+
+Your bot should be running! If you are new to Docker, I would recommend checking out its documentation for full control over your bot. 
+
+## 🚀 Deploying your own bot <a name = "deployment"></a>
+I recommend Digital Ocean for small projects like this because it is straightforward to use and affordable. [Sign up with my referral code, and we both get some free hosting.](https://m.do.co/c/6b5df7ef55b6)
+
+## ⛏️ Built Using <a name = "built_using"></a>
++ [discord.py](https://github.com/Rapptz/discord.py) - Python Discord API Wrapper
++ [Digital Ocean](https://www.digitalocean.com/) - IaaS hosting platform
+
+## ✍️ author <a name = "author"></a>
++ [Anson Biggs](https://blog.ansonbiggs.com/author/anson/) - The one and only
+
+## 🎉 Acknowledgements <a name = "acknowledgement"></a>
++ Discord for having a great bot API
++ IEX Cloud for offering a free tier
++ Viewers like you ♥
