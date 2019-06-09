@@ -1,47 +1,36 @@
-# Work with Python 3.6
 import discord
-import re
-import urllib.request
-import json
-import tickerInfo as ti
-
-TOKEN = "Discord Token"
-TICKER_REGEX = "[$]([a-zA-Z]{1,4})"
+import cred
+from functions import *
 
 client = discord.Client()
 
 
 @client.event
-async def on_message(message):
-    """
-    This runs every time a message is detected.
-    """
-
-    # Check that message wasnt the bot.
-    if message.author == client.user:
-        return
-
-    tickers = re.findall(TICKER_REGEX, message.content)
-    if tickers is not []:
-        print(tickers)
-        await client.send_typing(message.channel)
-        await client.send_message(message.channel, ti.tickerMessage(tickers))
-        return
-
-    # print(message.author.id)
-
-    # if message.content.startswith("!hello"):
-    #     print(dir(message.author))
-    #     msg = "Hello {0.author.mention}".format(message)
-    #     await client.send_message(message.channel, msg)
+async def on_ready():
+    print("We have logged in as {0.user}".format(client))
 
 
 @client.event
-async def on_ready():
-    print("Logged in as")
-    print(client.user.name)
-    print(client.user.id)
-    print("------")
+async def on_message(message):
+    if message.author == client.user:
+        return
+
+    # Check for dividend command
+    if message.content.startswith("/dividend"):
+        replies = tickerDividend(getTickers(message.content))
+        if replies:
+            for tick, reply in replies.items():
+                await message.channel.send(reply)
+        else:
+            await message.channel.send("No tickers found.")
+    # If no commands, check for any tickers.
+    else:
+        replies = tickerDataReply(getTickers(message.content))
+        if replies:
+            for symbol, reply in replies.items():
+                await message.channel.send(reply)
+        else:
+            return
 
 
-client.run(TOKEN)
+client.run(os.environ["DISCORD"])
