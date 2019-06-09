@@ -1,5 +1,4 @@
 import discord
-import cred
 from functions import *
 
 client = discord.Client()
