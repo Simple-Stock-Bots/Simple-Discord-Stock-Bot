@@ -22,6 +22,10 @@ async def on_message(message):
                 await message.channel.send(reply)
         else:
             await message.channel.send("No tickers found.")
+    elif message.content.startswith('/help'):
+        """Send link to docs when the command /help is issued."""
+        message = "[Please see the docs for Bot information](https://simple-stock-bots.gitlab.io/site/discord/)"
+        await message.channel.send(message)
     # If no commands, check for any tickers.
     else:
         replies = tickerDataReply(getTickers(message.content))
