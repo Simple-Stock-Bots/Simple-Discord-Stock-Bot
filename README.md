@@ -130,7 +130,7 @@ Then run the bot using your API keys.
 
 ```
 docker run --detach \
-     -e discord=DISCORD_TOKEN \
+     -e DISCORD=DISCORD_TOKEN \
      -e IEX=IEX_TOKEN \
       simple-discord-bot
 ```
