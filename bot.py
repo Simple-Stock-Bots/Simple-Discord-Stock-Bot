@@ -1,7 +1,9 @@
 import discord
-from functions import *
+from functions import Symbol
+import os
 
 client = discord.Client()
+s = Symbol(os.environ["IEX"])
 
 
 @client.event
@@ -16,37 +18,57 @@ async def on_message(message):
 
     # Check for dividend command
     if message.content.startswith("/dividend"):
-        replies = symbolDividend(getSymbols(message.content))
+        replies = s.dividend_reply(s.find_symbols(message.content))
         if replies:
             for reply in replies.items():
                 await message.channel.send(reply[1])
         else:
-            await message.channel.send("No tickers found.")
+
+            await message.channel.send(
+                "Command requires a ticker. See /help for more information."
+            )
 
     elif message.content.startswith("/news"):
-        replies = symbolNews(getSymbols(message.content))
+        replies = s.news_reply(s.find_symbols(message.content))
         if replies:
             for reply in replies.items():
                 await message.channel.send(reply[1])
         else:
-            await message.channel.send("No tickers found.")
+            await message.channel.send(
+                "Command requires a ticker. See /help for more information."
+            )
 
     elif message.content.startswith("/info"):
-        replies = symbolInfo(getSymbols(message.content))
+        replies = s.info_reply(s.find_symbols(message.content))
         if replies:
             for reply in replies.items():
                 await message.channel.send(reply[1])
         else:
-            await message.channel.send("No tickers found.")
+            await message.channel.send(
+                "Command requires a ticker. See /help for more information."
+            )
+
+    elif message.content.startswith("/search"):
+        queries = s.search_symbols(message.content[7:])[:6]
+        if queries:
+            reply = "*Search Results:*\n`$ticker: Company Name`\n"
+            for query in queries:
+                reply += "`" + query[1] + "`\n"
+            await message.channel.send(reply)
+
+        else:
+            await message.channel.send(
+                "Command requires a ticker. See /help for more information."
+            )
 
     elif message.content.startswith("/help"):
         """Send link to docs when the command /help is issued."""
         reply = "[Please see the documentation for Bot information](https://simple-stock-bots.gitlab.io/site/discord/)"
-        await message.channel.send(message)
+        await message.channel.send(s.help_text)
 
     # If no commands, check for any tickers.
     else:
-        replies = symbolDataReply(getSymbols(message.content))
+        replies = s.price_reply(s.find_symbols(message.content))
         if replies:
             for reply in replies.items():
                 await message.channel.send(reply[1])

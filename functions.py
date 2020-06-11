@@ -1,5 +1,4 @@
 import json
-import os
 import re
 from datetime import datetime, timedelta
 
@@ -27,13 +26,14 @@ Full documentation can be found [here.](https://simple-stock-bots.gitlab.io/site
     - /dividend `$[symbol]` will return dividend information for the symbol.
     - /news `$[symbol]` will return news about the symbol.
     - /info `$[symbol]` will return general information about the symbol.
+    - /search `query` Takes a search string, whether a company name or ticker and returns a list of companies that are supported by the bot.
 
 **Inline Features**
     You can type @SimpleStockBot `[search]` in any chat or direct message to search for the stock bots full list of stock symbols and return the price of the ticker. 
 
 The bot also looks at every message in any chat it is in for stock symbols. Symbols start with a `$` followed by the stock symbol. For example: $tsla would return price information for Tesla Motors. 
 
-Market data is provided by [IEX Cloud](https://iexcloud.io)
+`Market data is provided by [IEX Cloud](https://iexcloud.io)`
     """
 
     def __init__(self, IEX_TOKEN: str):
