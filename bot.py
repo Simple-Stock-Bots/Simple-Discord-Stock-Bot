@@ -58,7 +58,7 @@ async def on_message(message):
 
         else:
             await message.channel.send(
-                "Command requires a ticker. See /help for more information."
+                "Command requires a query. See /help for more information."
             )
 
     elif message.content.startswith("/help"):
