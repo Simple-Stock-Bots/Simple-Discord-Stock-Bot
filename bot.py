@@ -63,7 +63,6 @@ async def on_message(message):
 
     elif message.content.startswith("/help"):
         """Send link to docs when the command /help is issued."""
-        reply = "[Please see the documentation for Bot information](https://simple-stock-bots.gitlab.io/site/discord/)"
         await message.channel.send(s.help_text)
 
     # If no commands, check for any tickers.
