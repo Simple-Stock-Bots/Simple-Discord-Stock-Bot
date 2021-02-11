@@ -1,78 +1,94 @@
-import discord
-from functions import Symbol
 import os
 
+import discord
+from discord.ext import commands
+
+from functions import Symbol
+
 client = discord.Client()
-s = Symbol(os.environ["IEX"])
+
+DISCORD_TOKEN = os.environ["DISCORD"]
+
+try:
+    IEX_TOKEN = os.environ["IEX"]
+except KeyError:
+    IEX_TOKEN = ""
+    print("Starting without an IEX Token will not allow you to get market data!")
 
 
-@client.event
+intents = discord.Intents.default()
+intents.members = True
+bot = commands.Bot(
+    command_prefix="/",
+    description="Simple bot for getting stock market information.",
+    intents=intents,
+)
+
+
+@bot.event
 async def on_ready():
-    print("We have logged in as {0.user}".format(client))
+    print("Starting Simple Stock Bot")
+    print("Logged in as")
+    print(bot.user.name)
+    print(bot.user.id)
+    print("------")
 
 
-@client.event
+@bot.event
 async def on_message(message):
+
     if message.author == client.user:
         return
 
-    # Check for dividend command
-    if message.content.startswith("/dividend"):
-        replies = s.dividend_reply(s.find_symbols(message.content))
-        if replies:
-            for reply in replies.items():
+    if "$" in message.content:
+        symbols = s.find_symbols(message.content)
+
+        if symbols:
+
+            for reply in s.price_reply(symbols).items():
                 await message.channel.send(reply[1])
-        else:
-
-            await message.channel.send(
-                "Command requires a ticker. See /help for more information."
-            )
-
-    elif message.content.startswith("/news"):
-        replies = s.news_reply(s.find_symbols(message.content))
-        if replies:
-            for reply in replies.items():
-                await message.channel.send(reply[1])
-        else:
-            await message.channel.send(
-                "Command requires a ticker. See /help for more information."
-            )
-
-    elif message.content.startswith("/info"):
-        replies = s.info_reply(s.find_symbols(message.content))
-        if replies:
-            for reply in replies.items():
-                await message.channel.send(reply[1])
-        else:
-            await message.channel.send(
-                "Command requires a ticker. See /help for more information."
-            )
-
-    elif message.content.startswith("/search"):
-        queries = s.search_symbols(message.content[7:])[:6]
-        if queries:
-            reply = "*Search Results:*\n`$ticker: Company Name`\n"
-            for query in queries:
-                reply += "`" + query[1] + "`\n"
-            await message.channel.send(reply)
-
-        else:
-            await message.channel.send(
-                "Command requires a query. See /help for more information."
-            )
-
-    elif message.content.startswith("/help"):
-        """Send link to docs when the command /help is issued."""
-        await message.channel.send(s.help_text)
-
-    # If no commands, check for any tickers.
-    else:
-        replies = s.price_reply(s.find_symbols(message.content))
-        if replies:
-            for reply in replies.items():
-                await message.channel.send(reply[1])
-        else:
-            return
 
 
-client.run(os.environ["DISCORD"])
+@bot.command(description="Information on how to donate.")
+async def donate(ctx, cmd: str):
+    print("donate")
+    await ctx.send("donate:" + cmd)
+
+
+@bot.command()
+async def dividend(ctx, cmd: str):
+    await ctx.send("dividend:" + cmd)
+
+
+@bot.command()
+async def intra(ctx, cmd: str):
+    await ctx.send("intra:" + cmd)
+
+
+@bot.command()
+async def chart(ctx, cmd: str):
+    await ctx.send("chart:" + cmd)
+
+
+@bot.command()
+async def news(ctx, cmd: str):
+    await ctx.send("news:" + cmd)
+
+
+@bot.command()
+async def info(ctx, cmd: str):
+    await ctx.send("info:" + cmd)
+
+
+@bot.command()
+async def stat(ctx, cmd: str):
+    await ctx.send("stat:" + cmd)
+
+
+# @bot.command()
+# async def help(ctx, cmd: str):
+#     await ctx.send("help:" + cmd)
+
+
+s = Symbol(IEX_TOKEN)
+bot.run(DISCORD_TOKEN)
