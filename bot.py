@@ -127,6 +127,49 @@ async def crypto(ctx, symbol: str):
     await ctx.send(reply)
 
 
+import pandas as pd
+import io
+
+import mplfinance as mpf
+
+
+@bot.command()
+async def intra(ctx, sym: str):
+
+    symbol = s.find_symbols(sym)[0]
+
+    df = s.intra_reply(symbol)
+    if df.empty:
+        await ctx.send("Invalid symbol please see `/help` for usage details.")
+        return
+
+    buf = io.BytesIO()
+    mpf.plot(
+        df,
+        type="renko",
+        title=f"\n${symbol.upper()}",
+        volume=True,
+        style="yahoo",
+        mav=20,
+        savefig=dict(fname=buf, dpi=400, bbox_inches="tight"),
+    )
+    buf.seek(0)
+
+    caption = (
+        f"\nIntraday chart for ${symbol.upper()} from {df.first_valid_index().strftime('%I:%M')} to"
+        + f" {df.last_valid_index().strftime('%I:%M')} ET on"
+        + f" {datetime.date.today().strftime('%d, %b %Y')}"
+    )
+
+    await ctx.send(
+        content=caption,
+        file=discord.File(
+            buf,
+            filename=f"{symbol.upper()}:{datetime.date.today().strftime('%d%b%Y')}.png",
+        ),
+    )
+
+
 @bot.event
 async def on_message(message):
 
