@@ -66,13 +66,12 @@ async def dividend(ctx, cmd: str):
 
 
 @bot.command()
-async def news(ctx, cmd: str):
-    await ctx.send("news:" + cmd)
+async def info(ctx, sym: str):
+    symbols = s.find_symbols(sym)
 
-
-@bot.command()
-async def info(ctx, cmd: str):
-    await ctx.send("info:" + cmd)
+    if symbols:
+        for reply in s.info_reply(symbols).items():
+            await ctx.send(reply[1])
 
 
 @bot.command()
