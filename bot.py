@@ -2,14 +2,14 @@ import datetime
 import io
 import os
 
-import discord
 import mplfinance as mpf
-import pandas as pd
+
+import discord
 from discord.ext import commands
 
 from functions import Symbol
 
-DISCORD_TOKEN = os.environ["DISCORD"]
+DISCORD_TOKEN = "NjYyNzcyOTU5MzMyNTMyMjg2.Xg-1aw.Au28SCJJE3HLy23b3adREtLXFiY"
 
 try:
     IEX_TOKEN = os.environ["IEX"]
@@ -24,7 +24,9 @@ intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(
     command_prefix="/",
-    description="Simple bot for getting stock market information.",
+    description="Simple bot for getting stock market information. "
+    + "The bot responds to any ticker in a message with a dollar sign: $tsla. "
+    + "It also supports the commands below.",
     intents=intents,
 )
 
@@ -40,8 +42,10 @@ async def on_ready():
 
 @bot.command()
 async def status(ctx):
+    """Debug command for diagnosing if the bot is experiencing any issues."""
     message = ""
     try:
+        message = "Contact MisterBiggs#0465 if you need help.\n"
         # IEX Status
         message += s.iex_status() + "\n"
 
@@ -57,16 +61,19 @@ async def status(ctx):
 
 @bot.command()
 async def license(ctx):
+    """Returns the bots license agreement."""
     await ctx.send(s.license)
 
 
 @bot.command()
 async def donate(ctx):
+    """Details on how to support the development and hosting of the bot."""
     await ctx.send(s.donate_text)
 
 
 @bot.command()
 async def stat(ctx, *, sym: str):
+    """Get statistics on a list of stock symbols."""
     symbols = s.find_symbols(sym)
 
     if symbols:
@@ -76,6 +83,7 @@ async def stat(ctx, *, sym: str):
 
 @bot.command()
 async def dividend(ctx, *, sym: str):
+    """Get dividend information on a stock symbol."""
     symbols = s.find_symbols(sym)
 
     if symbols:
@@ -85,6 +93,7 @@ async def dividend(ctx, *, sym: str):
 
 @bot.command()
 async def news(ctx, *, sym: str):
+    """Get recent english news on a stock symbol."""
     symbols = s.find_symbols(sym)
 
     if symbols:
@@ -94,6 +103,7 @@ async def news(ctx, *, sym: str):
 
 @bot.command()
 async def info(ctx, *, sym: str):
+    """Get information of a stock ticker."""
     symbols = s.find_symbols(sym)
 
     if symbols:
@@ -103,6 +113,7 @@ async def info(ctx, *, sym: str):
 
 @bot.command()
 async def search(ctx, *, query: str):
+    """Search for a stock symbol using either symbol of company name."""
     results = s.search_symbols(query)
     if results:
         reply = "*Search Results:*\n`$ticker: Company Name`\n"
@@ -113,12 +124,14 @@ async def search(ctx, *, query: str):
 
 @bot.command()
 async def crypto(ctx, symbol: str):
+    """Get the price of a cryptocurrency using in USD."""
     reply = s.crypto_reply(symbol)
     await ctx.send(reply)
 
 
 @bot.command()
 async def intra(ctx, sym: str):
+    """Get a chart for the stocks movement since market open."""
 
     symbol = s.find_symbols(sym)[0]
 
@@ -156,6 +169,7 @@ async def intra(ctx, sym: str):
 
 @bot.command()
 async def chart(ctx, sym: str):
+    """Get a chart for the stocks movement for the past month."""
 
     symbol = s.find_symbols(sym)[0]
 

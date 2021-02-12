@@ -55,7 +55,7 @@ Full documentation on using and running your own stock bot can be found [here.](
     """
 
     donate_text = """
-Simple Stock Bot is run entirely on donations[.](https://www.buymeacoffee.com/Anson)
+Simple Stock Bot is run entirely on donations.
 All donations go directly towards paying for servers, and market data is provided by
 [IEX Cloud](https://iexcloud.io/).
 
@@ -63,7 +63,7 @@ The easiest way to donate is to run the `/donate [amount in USD]` command with U
 
 Example: `/donate 2` would donate 2 USD.
 An alternative way to donate is through https://www.buymeacoffee.com/Anson,which accepts Paypal or Credit card.
-If you have any questions get in touch: @MisterBiggs or[anson@ansonbiggs.com](http://mailto:anson@ansonbiggs.com/)
+If you have any questions get in touch: MisterBiggs#0465 or[anson@ansonbiggs.com](http://mailto:anson@ansonbiggs.com/)
 
 _Donations can only be made in a chat directly with @simplestockbot_
     """
