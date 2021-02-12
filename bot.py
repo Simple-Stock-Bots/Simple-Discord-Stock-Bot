@@ -76,8 +76,13 @@ async def info(ctx, cmd: str):
 
 
 @bot.command()
-async def search(ctx, cmd: str):
-    await ctx.send("search:" + cmd)
+async def search(ctx, query: str):
+    results = s.search_symbols(query)
+    if results:
+        reply = "*Search Results:*\n`$ticker: Company Name`\n"
+        for query in results:
+            reply += "`" + query[1] + "`\n"
+        await ctx.send(reply)
 
 
 @bot.command()
