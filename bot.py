@@ -170,6 +170,41 @@ async def intra(ctx, sym: str):
     )
 
 
+@bot.command()
+async def chart(ctx, sym: str):
+
+    symbol = s.find_symbols(sym)[0]
+
+    df = s.intra_reply(symbol)
+    if df.empty:
+        await ctx.send("Invalid symbol please see `/help` for usage details.")
+        return
+
+    buf = io.BytesIO()
+    mpf.plot(
+        df,
+        type="candle",
+        title=f"\n${symbol.upper()}",
+        volume=True,
+        style="yahoo",
+        savefig=dict(fname=buf, dpi=400, bbox_inches="tight"),
+    )
+    buf.seek(0)
+
+    caption = (
+        f"\n1 Month chart for ${symbol.upper()} from {df.first_valid_index().strftime('%d, %b %Y')}"
+        + f" to {df.last_valid_index().strftime('%d, %b %Y')}"
+    )
+
+    await ctx.send(
+        content=caption,
+        file=discord.File(
+            buf,
+            filename=f"{symbol.upper()}:{datetime.date.today().strftime('1M%d%b%Y')}.png",
+        ),
+    )
+
+
 @bot.event
 async def on_message(message):
 
