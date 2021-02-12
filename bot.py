@@ -48,11 +48,13 @@ async def on_message(message):
             for reply in s.price_reply(symbols).items():
                 await message.channel.send(reply[1])
 
+@bot.command()
+async def dividend(ctx, sym: str):
+    symbols = s.find_symbols(sym)
 
-@bot.command(description="Information on how to donate.")
-async def donate(ctx, cmd: str):
-    print("donate")
-    await ctx.send("donate:" + cmd)
+    if symbols:
+        for symbol in symbols:
+            await ctx.send(s.dividend_reply(symbol))
 
 
 @bot.command()
