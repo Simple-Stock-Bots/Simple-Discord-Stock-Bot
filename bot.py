@@ -56,13 +56,12 @@ async def donate(ctx, cmd: str):
 
 
 @bot.command()
-async def stat(ctx, cmd: str):
-    await ctx.send("stat:" + cmd)
+async def news(ctx, sym: str):
+    symbols = s.find_symbols(sym)
 
-
-@bot.command()
-async def dividend(ctx, cmd: str):
-    await ctx.send("dividend:" + cmd)
+    if symbols:
+        for reply in s.news_reply(symbols).items():
+            await ctx.send(reply[1])
 
 
 @bot.command()
