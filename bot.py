@@ -16,6 +16,7 @@ try:
 except KeyError:
     IEX_TOKEN = ""
     print("Starting without an IEX Token will not allow you to get market data!")
+s = Symbol(IEX_TOKEN)
 
 
 client = discord.Client()
@@ -24,9 +25,7 @@ intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(
     command_prefix="/",
-    description="Simple bot for getting stock market information. "
-    + "The bot responds to any ticker in a message with a dollar sign: $tsla. "
-    + "It also supports the commands below.",
+    description=s.help_text,
     intents=intents,
 )
 
@@ -126,7 +125,10 @@ async def search(ctx, *, query: str):
 async def crypto(ctx, symbol: str):
     """Get the price of a cryptocurrency using in USD."""
     reply = s.crypto_reply(symbol)
-    await ctx.send(reply)
+    if reply:
+        await ctx.send(reply)
+    else:
+        await ctx.send("Crypto Symbol could not be found.")
 
 
 @bot.command()
@@ -165,6 +167,7 @@ async def intra(ctx, sym: str):
             filename=f"{symbol.upper()}:{datetime.date.today().strftime('%d%b%Y')}.png",
         ),
     )
+    await ctx.send(f"{s.price_reply([symbol])[symbol]}")
 
 
 @bot.command()
@@ -201,12 +204,13 @@ async def chart(ctx, sym: str):
             filename=f"{symbol.upper()}:{datetime.date.today().strftime('1M%d%b%Y')}.png",
         ),
     )
+    await ctx.send(f"{s.price_reply([symbol])[symbol]}")
 
 
 @bot.event
 async def on_message(message):
 
-    if message.author == client.user:
+    if message.author.id == bot.user.id:
         return
 
     if message.content[0] == "/":
@@ -222,5 +226,4 @@ async def on_message(message):
             return
 
 
-s = Symbol(IEX_TOKEN)
 bot.run(DISCORD_TOKEN)

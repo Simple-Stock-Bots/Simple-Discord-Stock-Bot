@@ -27,14 +27,14 @@ class Symbol:
     )
 
     help_text = """
-Thanks for using this bot, consider supporting it by [buying me a beer.](https://www.buymeacoffee.com/Anson)
+Thanks for using this bot, consider supporting it by buying me a beer: https://www.buymeacoffee.com/Anson)
 
-Keep up with the latest news for the bot in itsTelegram Channel: https://t.me/simplestockbotnews
+Keep up with the latest news for the bot in its Discord Server: https://discord.gg/VtEHyyTBAK
 
-Full documentation on using and running your own stock bot can be found [here.](https://simple-stock-bots.gitlab.io/site)
+Full documentation on using and running your own stock bot can be found here: https://simple-stock-bots.gitlab.io/site
 
 **Commands**
-        - /donate [amount in USD] to donate. 🎗️
+        - /donate information on how to donate. 🎗️
         - /dividend $[symbol] will return dividend information for the symbol. 📅
         - /intra $[symbol] Plot of the stocks movement since the last market open.  📈
         - /chart $[symbol] Plot of the stocks movement for the past 1 month. 📊
@@ -59,13 +59,9 @@ Simple Stock Bot is run entirely on donations.
 All donations go directly towards paying for servers, and market data is provided by
 [IEX Cloud](https://iexcloud.io/).
 
-The easiest way to donate is to run the `/donate [amount in USD]` command with USdollars you would like to donate.
-
-Example: `/donate 2` would donate 2 USD.
-An alternative way to donate is through https://www.buymeacoffee.com/Anson,which accepts Paypal or Credit card.
+The best way to donate is through https://www.buymeacoffee.com/Anson which accepts Paypal or Credit card.
 If you have any questions get in touch: MisterBiggs#0465 or[anson@ansonbiggs.com](http://mailto:anson@ansonbiggs.com/)
 
-_Donations can only be made in a chat directly with @simplestockbot_
     """
 
     def __init__(self, IEX_TOKEN: str) -> None:
