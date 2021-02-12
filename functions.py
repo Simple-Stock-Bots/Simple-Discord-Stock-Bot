@@ -276,7 +276,7 @@ If you have any questions get in touch: MisterBiggs#0465 or[anson@ansonbiggs.com
             Each symbol passed in is a key with its value being a human readable formatted string of the symbols div dates.
         """
 
-        IEXurl = f"https://cloud.iexapis.com/stable/stock/msft/dividends/next?token={self.IEX_TOKEN}"
+        IEXurl = f"https://cloud.iexapis.com/stable/stock/{symbol}/dividends/next?token={self.IEX_TOKEN}"
         response = r.get(IEXurl)
         if response.status_code == 200:
             IEXData = response.json()[0]
