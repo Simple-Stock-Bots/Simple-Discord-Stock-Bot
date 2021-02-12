@@ -35,6 +35,11 @@ async def on_ready():
 
 
 @bot.command()
+async def license(ctx):
+    await ctx.send(s.license)
+
+
+@bot.command()
 async def donate(ctx):
     await ctx.send(s.donate_text)
 
