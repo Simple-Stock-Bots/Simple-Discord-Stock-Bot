@@ -1,11 +1,13 @@
+import datetime
+import io
 import os
 
 import discord
+import mplfinance as mpf
+import pandas as pd
 from discord.ext import commands
 
 from functions import Symbol
-
-client = discord.Client()
 
 DISCORD_TOKEN = os.environ["DISCORD"]
 
@@ -15,6 +17,8 @@ except KeyError:
     IEX_TOKEN = ""
     print("Starting without an IEX Token will not allow you to get market data!")
 
+
+client = discord.Client()
 
 intents = discord.Intents.default()
 intents.members = True
@@ -60,22 +64,18 @@ async def license(ctx):
 async def donate(ctx):
     await ctx.send(s.donate_text)
 
-    if message.author == client.user:
-        return
 
 @bot.command()
-async def stat(ctx, sym: str):
+async def stat(ctx, *, sym: str):
     symbols = s.find_symbols(sym)
 
     if symbols:
         for reply in s.stat_reply(symbols).items():
             await ctx.send(reply[1])
 
-            for reply in s.price_reply(symbols).items():
-                await message.channel.send(reply[1])
 
 @bot.command()
-async def dividend(ctx, sym: str):
+async def dividend(ctx, *, sym: str):
     symbols = s.find_symbols(sym)
 
     if symbols:
@@ -84,7 +84,7 @@ async def dividend(ctx, sym: str):
 
 
 @bot.command()
-async def news(ctx, sym: str):
+async def news(ctx, *, sym: str):
     symbols = s.find_symbols(sym)
 
     if symbols:
@@ -93,7 +93,7 @@ async def news(ctx, sym: str):
 
 
 @bot.command()
-async def info(ctx, sym: str):
+async def info(ctx, *, sym: str):
     symbols = s.find_symbols(sym)
 
     if symbols:
@@ -102,7 +102,7 @@ async def info(ctx, sym: str):
 
 
 @bot.command()
-async def search(ctx, query: str):
+async def search(ctx, *, query: str):
     results = s.search_symbols(query)
     if results:
         reply = "*Search Results:*\n`$ticker: Company Name`\n"
@@ -112,25 +112,9 @@ async def search(ctx, query: str):
 
 
 @bot.command()
-async def intra(ctx, cmd: str):
-    await ctx.send("intra:" + cmd)
-
-
-@bot.command()
-async def chart(ctx, cmd: str):
-    await ctx.send("chart:" + cmd)
-
-
-@bot.command()
 async def crypto(ctx, symbol: str):
     reply = s.crypto_reply(symbol)
     await ctx.send(reply)
-
-
-import pandas as pd
-import io
-
-import mplfinance as mpf
 
 
 @bot.command()
