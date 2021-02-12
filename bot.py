@@ -35,6 +35,23 @@ async def on_ready():
 
 
 @bot.command()
+async def status(ctx):
+    message = ""
+    try:
+        # IEX Status
+        message += s.iex_status() + "\n"
+
+        # Message Status
+        message += s.message_status()
+    except Exception as ex:
+        message += (
+            f"*\n\nERROR ENCOUNTERED:*\n{ex}\n\n"
+            + "*The bot encountered an error while attempting to find errors. Please contact the bot admin.*"
+        )
+    await ctx.send(message)
+
+
+@bot.command()
 async def license(ctx):
     await ctx.send(s.license)
 
