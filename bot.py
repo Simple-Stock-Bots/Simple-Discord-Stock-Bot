@@ -34,8 +34,9 @@ async def on_ready():
     print("------")
 
 
-@bot.event
-async def on_message(message):
+@bot.command()
+async def donate(ctx):
+    await ctx.send(s.donate_text)
 
     if message.author == client.user:
         return
