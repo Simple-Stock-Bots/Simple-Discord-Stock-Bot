@@ -56,18 +56,13 @@ async def donate(ctx, cmd: str):
 
 
 @bot.command()
+async def stat(ctx, cmd: str):
+    await ctx.send("stat:" + cmd)
+
+
+@bot.command()
 async def dividend(ctx, cmd: str):
     await ctx.send("dividend:" + cmd)
-
-
-@bot.command()
-async def intra(ctx, cmd: str):
-    await ctx.send("intra:" + cmd)
-
-
-@bot.command()
-async def chart(ctx, cmd: str):
-    await ctx.send("chart:" + cmd)
 
 
 @bot.command()
@@ -81,13 +76,23 @@ async def info(ctx, cmd: str):
 
 
 @bot.command()
-async def stat(ctx, cmd: str):
-    await ctx.send("stat:" + cmd)
+async def search(ctx, cmd: str):
+    await ctx.send("search:" + cmd)
 
 
-# @bot.command()
-# async def help(ctx, cmd: str):
-#     await ctx.send("help:" + cmd)
+@bot.command()
+async def intra(ctx, cmd: str):
+    await ctx.send("intra:" + cmd)
+
+
+@bot.command()
+async def chart(ctx, cmd: str):
+    await ctx.send("chart:" + cmd)
+
+
+@bot.command()
+async def crypto(ctx, cmd: str):
+    await ctx.send("crypto" + cmd)
 
 
 s = Symbol(IEX_TOKEN)
