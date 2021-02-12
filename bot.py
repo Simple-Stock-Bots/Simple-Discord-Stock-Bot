@@ -91,8 +91,28 @@ async def chart(ctx, cmd: str):
 
 
 @bot.command()
-async def crypto(ctx, cmd: str):
-    await ctx.send("crypto" + cmd)
+async def crypto(ctx, symbol: str):
+    reply = s.crypto_reply(symbol)
+    await ctx.send(reply)
+
+
+@bot.event
+async def on_message(message):
+
+    if message.author == client.user:
+        return
+
+    if message.content[0] == "/":
+        await bot.process_commands(message)
+        return
+
+    if "$" in message.content:
+        symbols = s.find_symbols(message.content)
+
+        if symbols:
+            for reply in s.price_reply(symbols).items():
+                await message.channel.send(reply[1])
+            return
 
 
 s = Symbol(IEX_TOKEN)
