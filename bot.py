@@ -9,7 +9,7 @@ from discord.ext import commands
 
 from functions import Symbol
 
-DISCORD_TOKEN = "NjYyNzcyOTU5MzMyNTMyMjg2.Xg-1aw.Au28SCJJE3HLy23b3adREtLXFiY"
+DISCORD_TOKEN = os.environ["DISCORD"]
 
 try:
     IEX_TOKEN = os.environ["IEX"]
@@ -21,12 +21,10 @@ s = Symbol(IEX_TOKEN)
 
 client = discord.Client()
 
-intents = discord.Intents.default()
-intents.members = True
+
 bot = commands.Bot(
     command_prefix="/",
     description=s.help_text,
-    intents=intents,
 )
 
 
