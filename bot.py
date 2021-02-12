@@ -40,10 +40,13 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    if "$" in message.content:
-        symbols = s.find_symbols(message.content)
+@bot.command()
+async def stat(ctx, sym: str):
+    symbols = s.find_symbols(sym)
 
-        if symbols:
+    if symbols:
+        for reply in s.stat_reply(symbols).items():
+            await ctx.send(reply[1])
 
             for reply in s.price_reply(symbols).items():
                 await message.channel.send(reply[1])
