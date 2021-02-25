@@ -258,6 +258,9 @@ If you have any questions get in touch: MisterBiggs#0465 or[anson@ansonbiggs.com
             else:
                 message = f"The symbol: {symbol} was not found."
 
+            if symbol.upper() == "GME":
+                message += "\n\n🙌💎Power to the Players💎🙌"
+
             dataMessages[symbol] = message
 
         return dataMessages
