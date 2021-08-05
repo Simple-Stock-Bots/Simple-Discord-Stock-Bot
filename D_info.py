@@ -6,7 +6,7 @@ import re
 import requests as r
 
 
-class T_info:
+class D_info:
     license = re.sub(
         r"\b\n",
         " ",
