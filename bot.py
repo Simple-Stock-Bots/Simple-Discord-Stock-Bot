@@ -9,7 +9,7 @@ from discord.ext import commands
 
 from functions import Symbol
 
-DISCORD_TOKEN = os.environ["DISCORD"]
+DISCORD_TOKEN = "NjAxNjYwNzM1ODQzNDY3Mjg0.XTFiOQ.DMEKIug2mhX1WGGVSD1bYuYXVro"
 
 try:
     IEX_TOKEN = os.environ["IEX"]
