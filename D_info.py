@@ -11,7 +11,7 @@ class T_info:
         r"\b\n",
         " ",
         r.get(
-            "https://gitlab.com/simple-stock-bots/simple-telegram-stock-bot/-/raw/master/LICENSE"
+            "https://gitlab.com/simple-stock-bots/simple-discord-stock-bot/-/raw/master/LICENSE"
         ).text,
     )
 
@@ -38,8 +38,6 @@ Simply calling a symbol in any message that the bot can see will also return the
         - `/trending` Trending Stocks and Cryptos. 💬
         - `/help` Get some help using the bot. 🆘
 
-**Inline Features**
-    You can type @SimpleStockBot `[search]` in any chat or direct message to search for the stock bots full list of stock symbols and return the price of the ticker. Then once you select the ticker want the bot will send a message as you in that chat with the latest stock price.
     
     Market data is provided by [IEX Cloud](https://iexcloud.io)
 
@@ -56,7 +54,7 @@ The easiest way to donate is to run the `/donate [amount in USD]` command with U
 Example: `/donate 2` would donate 2 USD.
 
 An alternative way to donate is through https://www.buymeacoffee.com/Anson which requires no account and accepts Paypal or Credit card.
-If you have any questions see the [website](https:docs.simplestockbot.com)
+If you have any questions see the [website](https://docs.simplestockbot.com)
 
     """
 
