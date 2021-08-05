@@ -1,22 +1,29 @@
 import datetime
+import html
 import io
+import json
+import logging
 import os
+import random
+import string
+import traceback
+from logging import critical, debug, error, info, warning
+from uuid import uuid4
 
 import mplfinance as mpf
+
 
 import discord
 from discord.ext import commands
 
-from functions import Symbol
+from symbol_router import Router
+from D_info import D_info
+
 
 DISCORD_TOKEN = os.environ["DISCORD"]
 
-try:
-    IEX_TOKEN = os.environ["IEX"]
-except KeyError:
-    IEX_TOKEN = ""
-    print("Starting without an IEX Token will not allow you to get market data!")
-s = Symbol(IEX_TOKEN)
+s = Router()
+d = D_info()
 
 
 client = discord.Client()
@@ -24,7 +31,7 @@ client = discord.Client()
 
 bot = commands.Bot(
     command_prefix="/",
-    description=s.help_text,
+    description=d.help_text,
 )
 
 
@@ -38,16 +45,12 @@ async def on_ready():
 
 
 @bot.command()
-async def status(ctx):
+async def status(ctx: commands):
     """Debug command for diagnosing if the bot is experiencing any issues."""
     message = ""
     try:
         message = "Contact MisterBiggs#0465 if you need help.\n"
-        # IEX Status
-        message += s.iex_status() + "\n"
-
-        # Message Status
-        message += s.message_status()
+        message += s.status("") + "\n"
     except Exception as ex:
         message += (
             f"*\n\nERROR ENCOUNTERED:*\n{ex}\n\n"
@@ -57,59 +60,59 @@ async def status(ctx):
 
 
 @bot.command()
-async def license(ctx):
+async def license(ctx: commands):
     """Returns the bots license agreement."""
-    await ctx.send(s.license)
+    await ctx.send(d.license)
 
 
 @bot.command()
-async def donate(ctx):
+async def donate(ctx: commands):
     """Details on how to support the development and hosting of the bot."""
-    await ctx.send(s.donate_text)
+    await ctx.send(d.donate_text)
 
 
 @bot.command()
-async def stat(ctx, *, sym: str):
+async def stat(ctx: commands, *, sym: str):
     """Get statistics on a list of stock symbols."""
     symbols = s.find_symbols(sym)
 
     if symbols:
-        for reply in s.stat_reply(symbols).items():
-            await ctx.send(reply[1])
+        for reply in s.stat_reply(symbols):
+            await ctx.send(reply)
 
 
 @bot.command()
-async def dividend(ctx, *, sym: str):
+async def dividend(ctx: commands, *, sym: str):
     """Get dividend information on a stock symbol."""
     symbols = s.find_symbols(sym)
 
     if symbols:
-        for symbol in symbols:
-            await ctx.send(s.dividend_reply(symbol))
+        for reply in s.dividend_reply(symbols):
+            await ctx.send(reply)
 
 
 @bot.command()
-async def news(ctx, *, sym: str):
+async def news(ctx: commands, *, sym: str):
     """Get recent english news on a stock symbol."""
     symbols = s.find_symbols(sym)
 
     if symbols:
-        for reply in s.news_reply(symbols).items():
-            await ctx.send(reply[1])
+        for reply in s.news_reply(symbols):
+            await ctx.send(reply)
 
 
 @bot.command()
-async def info(ctx, *, sym: str):
+async def info(ctx: commands, *, sym: str):
     """Get information of a stock ticker."""
     symbols = s.find_symbols(sym)
 
     if symbols:
-        for reply in s.info_reply(symbols).items():
-            await ctx.send(reply[1])
+        for reply in s.info_reply(symbols):
+            await ctx.send(reply[0:1900])
 
 
 @bot.command()
-async def search(ctx, *, query: str):
+async def search(ctx: commands, *, query: str):
     """Search for a stock symbol using either symbol of company name."""
     results = s.search_symbols(query)
     if results:
@@ -120,90 +123,110 @@ async def search(ctx, *, query: str):
 
 
 @bot.command()
-async def crypto(ctx, symbol: str):
+async def crypto(ctx: commands, symbol: str):
     """Get the price of a cryptocurrency using in USD."""
-    reply = s.crypto_reply(symbol)
-    if reply:
-        await ctx.send(reply)
-    else:
-        await ctx.send("Crypto Symbol could not be found.")
+    await ctx.send(
+        "Crypto now has native support. Any crypto can be called using two dollar signs: `$$eth` `$$btc` `$$doge`"
+    )
 
 
 @bot.command()
-async def intra(ctx, sym: str):
+async def intra(ctx: commands, sym: str):
     """Get a chart for the stocks movement since market open."""
+    symbols = s.find_symbols(sym)
+
+    if len(symbols):
+        symbol = symbols[0]
+    else:
+        await ctx.send("No symbols or coins found.")
+        return
+
+    df = s.intra_reply(symbol)
+    if df.empty:
+        await ctx.send("Invalid symbol please see `/help` for usage details.")
+        return
     with ctx.channel.typing():
-
-        symbol = s.find_symbols(sym)[0]
-
-        df = s.intra_reply(symbol)
-        if df.empty:
-            await ctx.send("Invalid symbol please see `/help` for usage details.")
-            return
 
         buf = io.BytesIO()
         mpf.plot(
             df,
             type="renko",
-            title=f"\n${symbol.upper()}",
-            volume=True,
+            title=f"\n{symbol.name}",
+            volume="volume" in df.keys(),
             style="yahoo",
-            mav=20,
             savefig=dict(fname=buf, dpi=400, bbox_inches="tight"),
         )
+
         buf.seek(0)
 
-        caption = (
-            f"\nIntraday chart for ${symbol.upper()} from {df.first_valid_index().strftime('%I:%M')} to"
-            + f" {df.last_valid_index().strftime('%I:%M')} ET on"
-            + f" {datetime.date.today().strftime('%d, %b %Y')}"
-        )
-
+        # Get price so theres no request lag after the image is sent
+        price_reply = s.price_reply([symbol])[0]
         await ctx.send(
-            content=caption,
             file=discord.File(
                 buf,
-                filename=f"{symbol.upper()}:{datetime.date.today().strftime('%d%b%Y')}.png",
+                filename=f"{symbol.name}:intra{datetime.date.today().strftime('%S%M%d%b%Y')}.png",
             ),
+            content=f"\nIntraday chart for {symbol.name} from {df.first_valid_index().strftime('%d %b at %H:%M')} to"
+            + f" {df.last_valid_index().strftime('%d %b at %H:%M')}",
         )
-        await ctx.send(f"{s.price_reply([symbol])[symbol]}")
+        await ctx.send(price_reply)
 
 
 @bot.command()
-async def chart(ctx, sym: str):
-    """Get a chart for the stocks movement for the past month."""
+async def chart(ctx: commands, sym: str):
+    """returns a chart of the past month of data for a symbol"""
+
+    symbols = s.find_symbols(sym)
+
+    if len(symbols):
+        symbol = symbols[0]
+    else:
+        await ctx.send("No symbols or coins found.")
+        return
+
+    df = s.chart_reply(symbol)
+    if df.empty:
+        await ctx.send("Invalid symbol please see `/help` for usage details.")
+        return
     with ctx.channel.typing():
 
-        symbol = s.find_symbols(sym)[0]
-
-        df = s.intra_reply(symbol)
-        if df.empty:
-            await ctx.send("Invalid symbol please see `/help` for usage details.")
-            return
         buf = io.BytesIO()
         mpf.plot(
             df,
             type="candle",
-            title=f"\n${symbol.upper()}",
-            volume=True,
+            title=f"\n{symbol.name}",
+            volume="volume" in df.keys(),
             style="yahoo",
             savefig=dict(fname=buf, dpi=400, bbox_inches="tight"),
         )
         buf.seek(0)
 
-        caption = (
-            f"\n1 Month chart for ${symbol.upper()} from {df.first_valid_index().strftime('%d, %b %Y')}"
-            + f" to {df.last_valid_index().strftime('%d, %b %Y')}"
-        )
-
+        # Get price so theres no request lag after the image is sent
+        price_reply = s.price_reply([symbol])[0]
         await ctx.send(
-            content=caption,
             file=discord.File(
                 buf,
-                filename=f"{symbol.upper()}:{datetime.date.today().strftime('1M%d%b%Y')}.png",
+                filename=f"{symbol.name}:1M{datetime.date.today().strftime('%d%b%Y')}.png",
             ),
+            content=f"\n1 Month chart for {symbol.name} from {df.first_valid_index().strftime('%d, %b %Y')}"
+            + f" to {df.last_valid_index().strftime('%d, %b %Y')}",
         )
-        await ctx.send(f"{s.price_reply([symbol])[symbol]}")
+        await ctx.send(price_reply)
+
+
+@bot.command()
+async def cap(ctx: commands, sym: str):
+    symbols = s.find_symbols(sym)
+    if symbols:
+        with ctx.channel.typing():
+            for reply in s.cap_reply(symbols):
+                await ctx.send(reply)
+
+
+@bot.command()
+async def trending(ctx: commands):
+    with ctx.channel.typing():
+        await ctx.send(s.trending())
 
 
 @bot.event
@@ -211,18 +234,18 @@ async def on_message(message):
 
     if message.author.id == bot.user.id:
         return
-
-    if message.content[0] == "/":
-        await bot.process_commands(message)
-        return
-
-    if "$" in message.content:
-        symbols = s.find_symbols(message.content)
-
-        if symbols:
-            for reply in s.price_reply(symbols).items():
-                await message.channel.send(reply[1])
+    if message.content:
+        if message.content[0] == "/":
+            await bot.process_commands(message)
             return
+
+        if "$" in message.content:
+            symbols = s.find_symbols(message.content)
+
+            if symbols:
+                for reply in s.price_reply(symbols):
+                    await message.channel.send(reply)
+                return
 
 
 bot.run(DISCORD_TOKEN)
