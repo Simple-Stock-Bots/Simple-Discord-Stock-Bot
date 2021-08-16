@@ -120,7 +120,7 @@ async def search(ctx: commands, *, query: str):
 
 
 @bot.command()
-async def crypto(ctx: commands, symbol: str):
+async def crypto(ctx: commands, _: str):
     """Get the price of a cryptocurrency using in USD."""
     await ctx.send(
         "Crypto now has native support. Any crypto can be called using two dollar signs: `$$eth` `$$btc` `$$doge`"
