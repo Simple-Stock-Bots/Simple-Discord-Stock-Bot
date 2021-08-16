@@ -1,24 +1,15 @@
 import datetime
-import html
 import io
-import json
 import logging
 import os
-import random
-import string
-import traceback
-from logging import critical, debug, error, info, warning
-from uuid import uuid4
-
-import mplfinance as mpf
-
 
 import discord
+import mplfinance as mpf
 from discord.ext import commands
+from discord.flags import Intents
 
-from symbol_router import Router
 from D_info import D_info
-
+from symbol_router import Router
 
 DISCORD_TOKEN = os.environ["DISCORD"]
 
@@ -30,28 +21,31 @@ client = discord.Client()
 
 
 bot = commands.Bot(
-    command_prefix="/",
-    description=d.help_text,
+    command_prefix="/", description=d.help_text, intents=Intents.default()
+)
+
+logger = logging.getLogger("discord")
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 
 
 @bot.event
 async def on_ready():
-    print("Starting Simple Stock Bot")
-    print("Logged in as")
-    print(bot.user.name)
-    print(bot.user.id)
-    print("------")
+    logging.info("Starting Simple Stock Bot")
+    logging.info(f"Logged in as {bot.user.name} {bot.user.id}")
 
 
 @bot.command()
 async def status(ctx: commands):
     """Debug command for diagnosing if the bot is experiencing any issues."""
+    logging.warning(f"Status command ran by {ctx.message.author}")
     message = ""
     try:
         message = "Contact MisterBiggs#0465 if you need help.\n"
         message += s.status("") + "\n"
     except Exception as ex:
+        logging.critical(ex)
         message += (
             f"*\n\nERROR ENCOUNTERED:*\n{ex}\n\n"
             + "*The bot encountered an error while attempting to find errors. Please contact the bot admin.*"
@@ -216,6 +210,7 @@ async def chart(ctx: commands, sym: str):
 
 @bot.command()
 async def cap(ctx: commands, sym: str):
+    """Get the market cap of a symbol"""
     symbols = s.find_symbols(sym)
     if symbols:
         with ctx.channel.typing():
@@ -225,6 +220,7 @@ async def cap(ctx: commands, sym: str):
 
 @bot.command()
 async def trending(ctx: commands):
+    """Get a list of Trending Stocks and Coins"""
     with ctx.channel.typing():
         await ctx.send(s.trending())
 
