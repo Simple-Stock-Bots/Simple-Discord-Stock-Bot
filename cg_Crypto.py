@@ -3,12 +3,12 @@
 
 import logging
 from datetime import datetime
+from logging import critical, debug, error, info, warning
 from typing import List, Optional, Tuple
 
 import pandas as pd
 import requests as r
 import schedule
-from fuzzywuzzy import fuzz
 from markdownify import markdownify
 
 from Symbol import Coin
@@ -22,6 +22,7 @@ class cg_Crypto:
     vs_currency = "usd"  # simple/supported_vs_currencies for list of options
 
     searched_symbols = {}
+    trending_cache = None
 
     def __init__(self) -> None:
         """Creates a Symbol Object
@@ -68,11 +69,14 @@ class cg_Crypto:
         raw_symbols = self.get("/coins/list")
         symbols = pd.DataFrame(data=raw_symbols)
 
+        # Removes all binance-peg symbols
+        symbols = symbols[~symbols["id"].str.contains("binance-peg")]
+
         symbols["description"] = (
             "$$" + symbols["symbol"].str.upper() + ": " + symbols["name"]
         )
         symbols = symbols[["id", "symbol", "name", "description"]]
-        symbols["type_id"] = "$$" + symbols["id"]
+        symbols["type_id"] = "$$" + symbols["symbol"]
 
         self.symbol_list = symbols
         if return_df:
@@ -96,45 +100,6 @@ class cg_Crypto:
             return f"CoinGecko API responded that it was OK with a {status.status_code} in {status.elapsed.total_seconds()} Seconds."
         except:
             return f"CoinGecko API returned an error code {status.status_code} in {status.elapsed.total_seconds()} Seconds."
-
-    def search_symbols(self, search: str) -> List[Tuple[str, str]]:
-        """Performs a fuzzy search to find coin symbols closest to a search term.
-
-        Parameters
-        ----------
-        search : str
-            String used to search, could be a company name or something close to the companies coin ticker.
-
-        Returns
-        -------
-        List[tuple[str, str]]
-            A list tuples of every coin sorted in order of how well they match. Each tuple contains: (Symbol, Issue Name).
-        """
-        schedule.run_pending()
-        search = search.lower()
-        try:  # https://stackoverflow.com/a/3845776/8774114
-            return self.searched_symbols[search]
-        except KeyError:
-            pass
-
-        symbols = self.symbol_list
-        symbols["Match"] = symbols.apply(
-            lambda x: fuzz.ratio(search, f"{x['symbol']}".lower()),
-            axis=1,
-        )
-
-        symbols.sort_values(by="Match", ascending=False, inplace=True)
-        if symbols["Match"].head().sum() < 300:
-            symbols["Match"] = symbols.apply(
-                lambda x: fuzz.partial_ratio(search, x["name"].lower()),
-                axis=1,
-            )
-
-            symbols.sort_values(by="Match", ascending=False, inplace=True)
-        symbols = symbols.head(10)
-        symbol_list = list(zip(list(symbols["symbol"]), list(symbols["description"])))
-        self.searched_symbols[search] = symbol_list
-        return symbol_list
 
     def price_reply(self, coin: Coin) -> str:
         """Returns current market price or after hours if its available for a given coin symbol.
@@ -293,7 +258,7 @@ class cg_Crypto:
                 "include_market_cap": "true",
             },
         ):
-            print(resp)
+            debug(resp)
             try:
                 data = resp[coin.id]
 
@@ -336,6 +301,18 @@ class cg_Crypto:
 
         return f"No information found for: {symbol}\nEither today is boring or the symbol does not exist."
 
+    def spark_reply(self, symbol: Coin) -> str:
+        change = self.get(
+            f"/simple/price",
+            params={
+                "ids": symbol.id,
+                "vs_currencies": self.vs_currency,
+                "include_24hr_change": "true",
+            },
+        )[symbol.id]["usd_24h_change"]
+
+        return f"`{symbol.tag}`: {symbol.name}, {change:.2f}%"
+
     def trending(self) -> list[str]:
         """Gets current coins trending on coingecko
 
@@ -368,8 +345,9 @@ class cg_Crypto:
 
         except Exception as e:
             logging.warning(e)
-            trending = ["Trending Coins Currently Unavailable."]
+            return self.trending_cache
 
+        self.trending_cache = trending
         return trending
 
     def batch_price(self, coins: list[Coin]) -> list[str]:

@@ -2,12 +2,14 @@
 """
 
 import datetime
+import logging
 import random
 import re
 from logging import critical, debug, error, info, warning
 
 import pandas as pd
-from fuzzywuzzy import fuzz
+import schedule
+from cachetools import TTLCache, cached
 
 from cg_Crypto import cg_Crypto
 from IEX_Symbol import IEX_Symbol
@@ -17,13 +19,33 @@ from Symbol import Coin, Stock, Symbol
 class Router:
     STOCK_REGEX = "(?:^|[^\\$])\\$([a-zA-Z.]{1,6})"
     CRYPTO_REGEX = "[$]{2}([a-zA-Z]{1,20})"
-    searched_symbols = {}
+    trending_count = {}
 
     def __init__(self):
         self.stock = IEX_Symbol()
         self.crypto = cg_Crypto()
 
-    def find_symbols(self, text: str) -> list[Symbol]:
+        schedule.every().hour.do(self.trending_decay)
+
+    def trending_decay(self, decay=0.5):
+        """Decays the value of each trending stock by a multiplier"""
+        t_copy = {}
+        dead_keys = []
+        if self.trending_count:
+            t_copy = self.trending_count.copy()
+            for key in t_copy.keys():
+                if t_copy[key] < 0.01:
+                    # This just makes sure were not keeping around keys that havent been called in a very long time.
+                    dead_keys.append(key)
+                else:
+                    t_copy[key] = t_copy[key] * decay
+        for dead in dead_keys:
+            t_copy.pop(dead)
+
+        self.trending_count = t_copy.copy()
+        info("Decayed trending symbols.")
+
+    def find_symbols(self, text: str, *, trending_weight: int = 1) -> list[Symbol]:
         """Finds stock tickers starting with a dollar sign, and cryptocurrencies with two dollar signs
         in a blob of text and returns them in a list.
 
@@ -34,25 +56,42 @@ class Router:
 
         Returns
         -------
-        list[str]
-            List of stock symbols as strings without dollar sign.
+        list[Symbol]
+            List of stock symbols as Symbol objects
         """
+        schedule.run_pending()
+
         symbols = []
         stocks = set(re.findall(self.STOCK_REGEX, text))
         for stock in stocks:
-            if stock.upper() in self.stock.symbol_list["symbol"].values:
-                symbols.append(Stock(stock))
+            sym = self.stock.symbol_list[
+                self.stock.symbol_list["symbol"].str.fullmatch(stock, case=False)
+            ]
+            if ~sym.empty:
+                print(sym)
+                symbols.append(Stock(sym))
             else:
                 info(f"{stock} is not in list of stocks")
 
         coins = set(re.findall(self.CRYPTO_REGEX, text))
         for coin in coins:
-            if coin.lower() in self.crypto.symbol_list["symbol"].values:
-                symbols.append(Coin(coin.lower()))
+            sym = self.crypto.symbol_list[
+                self.crypto.symbol_list["symbol"].str.fullmatch(
+                    coin.lower(), case=False
+                )
+            ]
+            if ~sym.empty:
+                symbols.append(Coin(sym))
             else:
                 info(f"{coin} is not in list of coins")
-        info(symbols)
-        return symbols
+        if symbols:
+            info(symbols)
+            for symbol in symbols:
+                self.trending_count[symbol.tag] = (
+                    self.trending_count.get(symbol.tag, 0) + trending_weight
+                )
+
+            return symbols
 
     def status(self, bot_resp) -> str:
         """Checks for any issues with APIs.
@@ -78,45 +117,7 @@ class Router:
 
         return stats
 
-    def search_symbols(self, search: str) -> list[tuple[str, str]]:
-        """Performs a fuzzy search to find stock symbols closest to a search term.
-
-        Parameters
-        ----------
-        search : str
-            String used to search, could be a company name or something close to the companies stock ticker.
-
-        Returns
-        -------
-        list[tuple[str, str]]
-            A list tuples of every stock sorted in order of how well they match.
-                Each tuple contains: (Symbol, Issue Name).
-        """
-
-        df = pd.concat([self.stock.symbol_list, self.crypto.symbol_list])
-
-        search = search.lower()
-
-        df["Match"] = df.apply(
-            lambda x: fuzz.ratio(search, f"{x['symbol']}".lower()),
-            axis=1,
-        )
-
-        df.sort_values(by="Match", ascending=False, inplace=True)
-        # if df["Match"].head().sum() < 300:
-        #     df["Match"] = df.apply(
-        #         lambda x: fuzz.partial_ratio(search, x["name"].lower()),
-        #         axis=1,
-        #     )
-
-        #     df.sort_values(by="Match", ascending=False, inplace=True)
-
-        symbols = df.head(20)
-        symbol_list = list(zip(list(symbols["symbol"]), list(symbols["description"])))
-        self.searched_symbols[search] = symbol_list
-        return symbol_list
-
-    def inline_search(self, search: str) -> list[tuple[str, str]]:
+    def inline_search(self, search: str, matches: int = 5) -> pd.DataFrame:
         """Searches based on the shortest symbol that contains the same string as the search.
         Should be very fast compared to a fuzzy search.
 
@@ -133,16 +134,16 @@ class Router:
 
         df = pd.concat([self.stock.symbol_list, self.crypto.symbol_list])
 
-        search = search.lower()
+        df = df[
+            df["description"].str.contains(search, regex=False, case=False)
+        ].sort_values(by="type_id", key=lambda x: x.str.len())
 
-        df = df[df["type_id"].str.contains(search, regex=False)].sort_values(
-            by="type_id", key=lambda x: x.str.len()
+        symbols = df.head(matches)
+        symbols["price_reply"] = symbols["type_id"].apply(
+            lambda sym: self.price_reply(self.find_symbols(sym, trending_weight=0))[0]
         )
 
-        symbols = df.head(20)
-        symbol_list = list(zip(list(symbols["symbol"]), list(symbols["description"])))
-        self.searched_symbols[search] = symbol_list
-        return symbol_list
+        return symbols
 
     def price_reply(self, symbols: list[Symbol]) -> list[str]:
         """Returns current market price or after hours if its available for a given stock symbol.
@@ -192,7 +193,7 @@ class Router:
             elif isinstance(symbol, Coin):
                 replies.append("Cryptocurrencies do no have Dividends.")
             else:
-                print(f"{symbol} is not a Stock or Coin")
+                debug(f"{symbol} is not a Stock or Coin")
 
         return replies
 
@@ -221,7 +222,7 @@ class Router:
                     "News is not yet supported for cryptocurrencies. If you have any suggestions for news sources please contatct @MisterBiggs"
                 )
             else:
-                print(f"{symbol} is not a Stock or Coin")
+                debug(f"{symbol} is not a Stock or Coin")
 
         return replies
 
@@ -247,7 +248,7 @@ class Router:
             elif isinstance(symbol, Coin):
                 replies.append(self.crypto.info_reply(symbol))
             else:
-                print(f"{symbol} is not a Stock or Coin")
+                debug(f"{symbol} is not a Stock or Coin")
 
         return replies
 
@@ -271,7 +272,7 @@ class Router:
         elif isinstance(symbol, Coin):
             return self.crypto.intra_reply(symbol)
         else:
-            print(f"{symbol} is not a Stock or Coin")
+            debug(f"{symbol} is not a Stock or Coin")
             return pd.DataFrame()
 
     def chart_reply(self, symbol: Symbol) -> pd.DataFrame:
@@ -294,7 +295,7 @@ class Router:
         elif isinstance(symbol, Coin):
             return self.crypto.chart_reply(symbol)
         else:
-            print(f"{symbol} is not a Stock or Coin")
+            debug(f"{symbol} is not a Stock or Coin")
             return pd.DataFrame()
 
     def stat_reply(self, symbols: list[Symbol]) -> list[str]:
@@ -319,7 +320,7 @@ class Router:
             elif isinstance(symbol, Coin):
                 replies.append(self.crypto.stat_reply(symbol))
             else:
-                print(f"{symbol} is not a Stock or Coin")
+                debug(f"{symbol} is not a Stock or Coin")
 
         return replies
 
@@ -345,10 +346,36 @@ class Router:
             elif isinstance(symbol, Coin):
                 replies.append(self.crypto.cap_reply(symbol))
             else:
-                print(f"{symbol} is not a Stock or Coin")
+                debug(f"{symbol} is not a Stock or Coin")
 
         return replies
 
+    def spark_reply(self, symbols: list[Symbol]) -> list[str]:
+        """Gets change for each symbol and returns it in a compact format
+
+        Parameters
+        ----------
+        symbols : list[str]
+            List of stock symbols
+
+        Returns
+        -------
+        list[str]
+            List of human readable strings.
+        """
+        replies = []
+
+        for symbol in symbols:
+            if isinstance(symbol, Stock):
+                replies.append(self.stock.spark_reply(symbol))
+            elif isinstance(symbol, Coin):
+                replies.append(self.crypto.spark_reply(symbol))
+            else:
+                debug(f"{symbol} is not a Stock or Coin")
+
+        return replies
+
+    @cached(cache=TTLCache(maxsize=1024, ttl=600))
     def trending(self) -> str:
         """Checks APIs for trending symbols.
 
@@ -361,17 +388,40 @@ class Router:
         stocks = self.stock.trending()
         coins = self.crypto.trending()
 
-        reply = "Trending Stocks:\n"
-        reply += "-" * len("Trending Stocks:") + "\n"
-        for stock in stocks:
-            reply += stock + "\n"
+        reply = ""
 
-        reply += "\n\nTrending Crypto:\n"
-        reply += "-" * len("Trending Crypto:") + "\n"
-        for coin in coins:
-            reply += coin + "\n"
+        if self.trending_count:
+            reply += "🔥Trending on the Stock Bot:\n`"
+            reply += "━" * len("Trending on the Stock Bot:") + "`\n"
 
-        return reply
+            sorted_trending = [
+                s[0]
+                for s in sorted(self.trending_count.items(), key=lambda item: item[1])
+            ][::-1][0:5]
+
+            for t in sorted_trending:
+                reply += self.spark_reply(self.find_symbols(t))[0] + "\n"
+
+        if stocks:
+            reply += "\n\n💵Trending Stocks:\n`"
+            reply += "━" * len("Trending Stocks:") + "`\n"
+            for stock in stocks:
+                reply += stock + "\n"
+
+        if coins:
+            reply += "\n\n🦎Trending Crypto:\n`"
+            reply += "━" * len("Trending Crypto:") + "`\n"
+            for coin in coins:
+                reply += coin + "\n"
+
+        if "`$GME" in reply:
+            reply = reply.replace("🔥", "🦍")
+
+        if reply:
+            return reply
+        else:
+            warning("Failed to collect trending data.")
+            return "Trending data is not currently available."
 
     def random_pick(self) -> str:
 
@@ -409,7 +459,7 @@ class Router:
             elif isinstance(symbol, Coin):
                 coins.append(symbol)
             else:
-                print(f"{symbol} is not a Stock or Coin")
+                debug(f"{symbol} is not a Stock or Coin")
 
         if stocks:
             # IEX batch endpoint doesnt seem to be working right now

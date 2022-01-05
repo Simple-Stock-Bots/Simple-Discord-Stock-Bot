@@ -10,7 +10,6 @@ from typing import List, Optional, Tuple
 import pandas as pd
 import requests as r
 import schedule
-from fuzzywuzzy import fuzz
 
 from Symbol import Stock
 
@@ -25,6 +24,7 @@ class IEX_Symbol:
     searched_symbols = {}
     otc_list = []
     charts = {}
+    trending_cache = None
 
     def __init__(self) -> None:
         """Creates a Symbol Object
@@ -36,6 +36,9 @@ class IEX_Symbol:
         """
         try:
             self.IEX_TOKEN = os.environ["IEX"]
+
+            if self.IEX_TOKEN == "TOKEN":
+                self.IEX_TOKEN = ""
         except KeyError:
             self.IEX_TOKEN = ""
             warning(
@@ -67,6 +70,13 @@ class IEX_Symbol:
         # Make sure API returned valid JSON
         try:
             resp_json = resp.json()
+
+            # IEX uses backtick ` as apostrophe which breaks telegram markdown parsing
+            if type(resp_json) is dict:
+                resp_json["companyName"] = resp_json.get("companyName", "").replace(
+                    "`", "'"
+                )
+
             return resp_json
         except r.exceptions.JSONDecodeError as e:
             logging.error(e)
@@ -105,6 +115,9 @@ class IEX_Symbol:
 
         symbols = pd.concat([reg, otc])
 
+        # IEX uses backtick ` as apostrophe which breaks telegram markdown parsing
+        symbols["name"] = symbols["name"].str.replace("`", "'")
+
         symbols["description"] = "$" + symbols["symbol"] + ": " + symbols["name"]
         symbols["id"] = symbols["symbol"]
         symbols["type_id"] = "$" + symbols["symbol"].str.lower()
@@ -122,6 +135,10 @@ class IEX_Symbol:
         str
             Human readable text on status of IEX API
         """
+
+        if self.IEX_TOKEN == "":
+            return "The `IEX_TOKEN` is not set so Stock Market data is not available."
+
         resp = r.get(
             "https://pjmps0c34hp7.statuspage.io/api/v2/status.json",
             timeout=15,
@@ -139,46 +156,6 @@ class IEX_Symbol:
                 f"{status['indicator']}: {status['description']}."
                 + " Please check the status page for more information. https://status.iexapis.com"
             )
-
-    def search_symbols(self, search: str) -> List[Tuple[str, str]]:
-        """Performs a fuzzy search to find stock symbols closest to a search term.
-
-        Parameters
-        ----------
-        search : str
-            String used to search, could be a company name or something close to the companies stock ticker.
-
-        Returns
-        -------
-        List[tuple[str, str]]
-            A list tuples of every stock sorted in order of how well they match. Each tuple contains: (Symbol, Issue Name).
-        """
-
-        schedule.run_pending()
-        search = search.lower()
-        try:  # https://stackoverflow.com/a/3845776/8774114
-            return self.searched_symbols[search]
-        except KeyError:
-            pass
-
-        symbols = self.symbol_list
-        symbols["Match"] = symbols.apply(
-            lambda x: fuzz.ratio(search, f"{x['symbol']}".lower()),
-            axis=1,
-        )
-
-        symbols.sort_values(by="Match", ascending=False, inplace=True)
-        if symbols["Match"].head().sum() < 300:
-            symbols["Match"] = symbols.apply(
-                lambda x: fuzz.partial_ratio(search, x["name"].lower()),
-                axis=1,
-            )
-
-            symbols.sort_values(by="Match", ascending=False, inplace=True)
-        symbols = symbols.head(10)
-        symbol_list = list(zip(list(symbols["symbol"]), list(symbols["description"])))
-        self.searched_symbols[search] = symbol_list
-        return symbol_list
 
     def price_reply(self, symbol: Stock) -> str:
         """Returns price movement of Stock for the last market day, or after hours.
@@ -265,7 +242,8 @@ class IEX_Symbol:
             try:
                 IEXData = resp[0]
             except IndexError as e:
-                return f"${symbol.id.upper()} either doesn't exist or pays no dividend."
+                logging.info(e)
+                return f"Getting dividend information for ${symbol.id.upper()} encountered an error. The provider for upcoming dividend information has been having issues recently which has likely caused this error. It is also possible that the stock has no dividend or does not exist."
             keys = (
                 "amount",
                 "currency",
@@ -306,7 +284,7 @@ class IEX_Symbol:
                     + f"\n\nThe dividend was declared on {declared} and the ex-dividend date is {ex}"
                 )
 
-        return f"${symbol.id.upper()} either doesn't exist or pays no dividend."
+        return f"Getting dividend information for ${symbol.id.upper()} encountered an error. The provider for upcoming dividend information has been having issues recently which has likely caused this error. It is also possible that the stock has no dividend or does not exist."
 
     def news_reply(self, symbol: Stock) -> str:
         """Gets most recent, english, non-paywalled news
@@ -402,7 +380,7 @@ class IEX_Symbol:
     def cap_reply(self, symbol: Stock) -> str:
         """Get the Market Cap of a stock"""
 
-        if data := self.get(f"/stable/stock/{symbol.id}/stats"):
+        if data := self.get(f"/stock/{symbol.id}/stats"):
 
             try:
                 cap = data["marketcap"]
@@ -484,6 +462,23 @@ class IEX_Symbol:
 
         return pd.DataFrame()
 
+    def spark_reply(self, symbol: Stock) -> str:
+        quote = self.get(f"/stock/{symbol.id}/quote")
+
+        open_change = quote.get("changePercent", 0)
+        after_change = quote.get("extendedChangePercent", 0)
+
+        change = 0
+
+        if open_change:
+            change = change + open_change
+        if after_change:
+            change = change + after_change
+
+        change = change * 100
+
+        return f"`{symbol.tag}`: {quote['companyName']}, {change:.2f}%"
+
     def trending(self) -> list[str]:
         """Gets current coins trending on IEX. Only returns when market is open.
 
@@ -494,9 +489,9 @@ class IEX_Symbol:
         """
 
         if data := self.get(f"/stock/market/list/mostactive"):
-            return [
+            self.trending_cache = [
                 f"`${s['symbol']}`: {s['companyName']}, {100*s['changePercent']:.2f}%"
                 for s in data
             ]
-        else:
-            return ["Trending Stocks Currently Unavailable."]
+
+        return self.trending_cache
