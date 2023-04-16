@@ -1,4 +1,4 @@
-"""Functions and Info specific to the Telegram Bot
+"""Functions and Info specific to the discord Bot
 """
 
 import re
@@ -10,15 +10,15 @@ class D_info:
     license = re.sub(
         r"\b\n",
         " ",
-        r.get(
-            "https://gitlab.com/simple-stock-bots/simple-discord-stock-bot/-/raw/master/LICENSE"
-        ).text,
+        r.get("https://gitlab.com/simple-stock-bots/simple-discord-stock-bot/-/raw/master/LICENSE").text,
     )
 
     help_text = """
 Thanks for using this bot, consider supporting it by [buying me a beer.](https://www.buymeacoffee.com/Anson)
 
-Keep up with the latest news for the bot in its Telegram Channel: https://t.me/simplestockbotnews
+If you are interested in stock market data, or want to host your own bot, be sure to use my affiliate link so that the bot can stay free: [marketdata.app](https://dashboard.marketdata.app/marketdata/aff/go/misterbiggs?keyword=discord)
+
+Keep up with the latest news for the bot in its discord Channel: https://t.me/simplestockbotnews
 
 Full documentation on using and running your own stock bot can be found on the bots [docs.](https://docs.simplestockbot.com)
 
@@ -28,18 +28,15 @@ Simply calling a symbol in any message that the bot can see will also return the
 
 **Commands**
         - `/donate [amount in USD]` to donate. 🎗️
-        - `/dividend $[symbol]` Dividend information for the symbol. 📅
         - `/intra $[symbol]` Plot of the stocks movement since the last market open.  📈
         - `/chart $[symbol]` Plot of the stocks movement for the past 1 month. 📊
-        - `/news $[symbol]` News about the symbol. 📰
-        - `/info $[symbol]` General information about the symbol. ℹ️
-        - `/stat $[symbol]` Key statistics about the symbol. 🔢
-        - `/cap $[symbol]` Market Capitalization of symbol. 💰
         - `/trending` Trending Stocks and Cryptos. 💬
         - `/help` Get some help using the bot. 🆘
 
-    
-    Market data is provided by [IEX Cloud](https://iexcloud.io)
+**Inline Features**
+    You can type @SimpleStockBot `[search]` in any chat or direct message to search for the stock bots full list of stock and crypto symbols and return the price. Then once you select the ticker want the bot will send a message as you in that chat with the latest stock price. Prices may be delayed by up to an hour.
+
+    Market data is provided by [marketdata.app](https://dashboard.marketdata.app/marketdata/aff/go/misterbiggs?keyword=discord)
 
     If you believe the bot is not behaving properly run `/status` or [get in touch](https://docs.simplestockbot.com/contact).
     """
@@ -47,7 +44,7 @@ Simply calling a symbol in any message that the bot can see will also return the
     donate_text = """
 Simple Stock Bot is run entirely on donations[.](https://www.buymeacoffee.com/Anson)
 All donations go directly towards paying for servers, and market data is provided by
-[IEX Cloud](https://iexcloud.io/).
+[marketdata.app](https://dashboard.marketdata.app/marketdata/aff/go/misterbiggs?keyword=discord).
 
 The easiest way to donate is to run the `/donate [amount in USD]` command with US dollars you would like to donate.
 
@@ -59,15 +56,10 @@ If you have any questions see the [website](https://docs.simplestockbot.com)
     """
 
 
-commands = """
+commands = """ # Not used by the bot but for updating commands with BotFather
 donate - Donate to the bot 🎗️
 help - Get some help using the bot. 🆘
-info - $[symbol] General information about the symbol. ℹ️
-news - $[symbol] News about the symbol. 📰
-stat - $[symbol] Key statistics about the symbol. 🔢
-cap - $[symbol] Market Capitalization of symbol. 💰
-dividend - $[symbol] Dividend info 📅
 trending - Trending Stocks and Cryptos. 💬
 intra - $[symbol] Plot since the last market open. 📈
 chart - $[chart] Plot of the past month. 📊
-"""  # Not used by the bot but for updaing commands with BotFather
+"""

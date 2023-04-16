@@ -3,10 +3,9 @@ import io
 import logging
 import os
 
-import discord
 import mplfinance as mpf
-from discord.ext import commands
-from discord.flags import Intents
+import nextcord
+from nextcord.ext import commands
 
 from D_info import D_info
 from symbol_router import Router
@@ -17,17 +16,17 @@ s = Router()
 d = D_info()
 
 
-client = discord.Client()
+intents = nextcord.Intents.default()
 
 
-bot = commands.Bot(
-    command_prefix="/", description=d.help_text, intents=Intents.default()
-)
+client = nextcord.Client(intents=intents)
+bot = commands.Bot(command_prefix="/", description=d.help_text, intents=intents)
 
-logger = logging.getLogger("discord")
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
+logger = logging.getLogger("nextcord")
+logger.setLevel(logging.INFO)
+handler = logging.FileHandler(filename="nextcord.log", encoding="utf-8", mode="w")
+handler.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s"))
+logger.addHandler(handler)
 
 
 @bot.event
@@ -43,9 +42,7 @@ async def status(ctx: commands):
     message = ""
     try:
         message = "Contact MisterBiggs#0465 if you need help.\n"
-        message += (
-            s.status(f"Bot recieved your message in: {bot.latency*1000:.4f}ms") + "\n"
-        )
+        message += s.status(f"Bot recieved your message in: {bot.latency*1000:.4f}ms") + "\n"
 
     except Exception as ex:
         logging.critical(ex)
@@ -69,46 +66,6 @@ async def donate(ctx: commands):
 
 
 @bot.command()
-async def stat(ctx: commands, *, sym: str):
-    """Get statistics on a list of stock symbols."""
-    symbols = s.find_symbols(sym)
-
-    if symbols:
-        for reply in s.stat_reply(symbols):
-            await ctx.send(reply)
-
-
-@bot.command()
-async def dividend(ctx: commands, *, sym: str):
-    """Get dividend information on a stock symbol."""
-    symbols = s.find_symbols(sym)
-
-    if symbols:
-        for reply in s.dividend_reply(symbols):
-            await ctx.send(reply)
-
-
-@bot.command()
-async def news(ctx: commands, *, sym: str):
-    """Get recent english news on a stock symbol."""
-    symbols = s.find_symbols(sym)
-
-    if symbols:
-        for reply in s.news_reply(symbols):
-            await ctx.send(reply)
-
-
-@bot.command()
-async def info(ctx: commands, *, sym: str):
-    """Get information of a stock ticker."""
-    symbols = s.find_symbols(sym)
-
-    if symbols:
-        for reply in s.info_reply(symbols):
-            await ctx.send(reply[0:1900])
-
-
-@bot.command()
 async def search(ctx: commands, *, query: str):
     """Search for a stock symbol using either symbol of company name."""
     results = s.search_symbols(query)
@@ -122,9 +79,7 @@ async def search(ctx: commands, *, query: str):
 @bot.command()
 async def crypto(ctx: commands, _: str):
     """Get the price of a cryptocurrency using in USD."""
-    await ctx.send(
-        "Crypto now has native support. Any crypto can be called using two dollar signs: `$$eth` `$$btc` `$$doge`"
-    )
+    await ctx.send("Crypto now has native support. Any crypto can be called using two dollar signs: `$$eth` `$$btc` `$$doge`")
 
 
 @bot.command()
@@ -143,7 +98,6 @@ async def intra(ctx: commands, sym: str):
         await ctx.send("Invalid symbol please see `/help` for usage details.")
         return
     with ctx.channel.typing():
-
         buf = io.BytesIO()
         mpf.plot(
             df,
@@ -159,7 +113,7 @@ async def intra(ctx: commands, sym: str):
         # Get price so theres no request lag after the image is sent
         price_reply = s.price_reply([symbol])[0]
         await ctx.send(
-            file=discord.File(
+            file=nextcord.File(
                 buf,
                 filename=f"{symbol.name}:intra{datetime.date.today().strftime('%S%M%d%b%Y')}.png",
             ),
@@ -186,7 +140,6 @@ async def chart(ctx: commands, sym: str):
         await ctx.send("Invalid symbol please see `/help` for usage details.")
         return
     with ctx.channel.typing():
-
         buf = io.BytesIO()
         mpf.plot(
             df,
@@ -201,7 +154,7 @@ async def chart(ctx: commands, sym: str):
         # Get price so theres no request lag after the image is sent
         price_reply = s.price_reply([symbol])[0]
         await ctx.send(
-            file=discord.File(
+            file=nextcord.File(
                 buf,
                 filename=f"{symbol.name}:1M{datetime.date.today().strftime('%d%b%Y')}.png",
             ),
@@ -230,7 +183,6 @@ async def trending(ctx: commands):
 
 @bot.event
 async def on_message(message):
-
     if message.author.id == bot.user.id:
         return
     if message.content:

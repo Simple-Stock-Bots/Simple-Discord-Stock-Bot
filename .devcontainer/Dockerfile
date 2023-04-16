@@ -1,23 +1,21 @@
-FROM python:3.9-buster AS builder
+FROM python:3.11-buster AS builder
 
 
 COPY requirements.txt /requirements.txt
-RUN pip install --user -r requirements.txt
+COPY dev-reqs.txt /dev-reqs.txt
+RUN pip install --user -r dev-reqs.txt
 
 
-FROM python:3.9-slim
+FROM python:3.11-slim
 
-ENV MPLBACKEND=Agg
 
 COPY --from=builder /root/.local /root/.local
 
-# Formatting
-RUN pip install --no-cache-dir black
-# Jupyter Notebooks
-RUN pip install --no-cache-dir ipykernel
 
-ENV DISCORD=TOKEN
-ENV IEX=TOKEN
+ENV MPLBACKEND=Agg
+
+ENV DISCORD=NTMyMDQ1MjAwODIzMDI1NjY2.XDQftA.Px-arL5wDMB4XKcoPOS1r4gCGmA
+ENV MARKETDATA=a01mVUZ4cW1sUUFOVWlEZ3NNTHFNeHYzS2diUUhTUVJZbzNxVVEwTUxVMD0
 
 COPY . .
 
